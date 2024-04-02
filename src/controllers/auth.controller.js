@@ -5,10 +5,9 @@ const db = require("../db");
 
 exports.createUser = async (req, res, next) => {
   const {
-    username,
     firstname,
     lastname,
-    dni,
+    phone,
     sex,
     email,
     address,
@@ -22,13 +21,12 @@ exports.createUser = async (req, res, next) => {
     }
 
     const query =
-      "INSERT INTO gym.user (username, firstname, lastname, dni, sex, email, address, birthday, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)";
+      "INSERT INTO gym.users (firstname, lastname, phone, sex, email, address, birthday, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)";
 
     const values = [
-      username,
       firstname,
       lastname,
-      dni,
+      phone,
       sex,
       email,
       address,
@@ -45,7 +43,7 @@ exports.createUser = async (req, res, next) => {
 
       const maxAge = 3 * 60 * 60;
       const token = jwt.sign(
-        { username, firstname, lastname, dni, sex, email, address, birthday },
+        { firstname, lastname, phone, sex, email, address, birthday },
         process.env.JwtSecret,
         {
           expiresIn: maxAge,
@@ -68,9 +66,9 @@ exports.createUser = async (req, res, next) => {
 /////////////////////////
 
 exports.login = async (req, res, next) => {
-  const { username, password } = req.body;
-  const query = "SELECT * FROM gym.user WHERE username = $1";
-  const values = [username];
+  const { email, password } = req.body;
+  const query = "SELECT * FROM gym.users WHERE email = $1";
+  const values = [email];
 
   db.query(query, values, (error, results) => {
     if (error) {
@@ -100,7 +98,7 @@ exports.login = async (req, res, next) => {
         const token = jwt.sign(
           {
             id: user.id,
-            dni: user.dni,
+            phone: user.phone,
             email: user.email,
             sex: user.sex,
             firstname: user.firstname,
