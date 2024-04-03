@@ -4,6 +4,7 @@ const cors = require("cors");
 const morgan = require("morgan");
 const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
+const initializeAdmin = require("./initializeAdmin");
 
 dotenv.config();
 app.use(morgan("dev"));
@@ -15,5 +16,9 @@ app.use(
 );
 app.use(cookieParser());
 app.use("/api", require("./routes/auth.routes"));
+
+//Llamar la función para crear un admin
+initializeAdmin();
+
 app.listen(5000);
 console.log("Server on port 5000");
