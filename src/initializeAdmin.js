@@ -33,12 +33,11 @@ const initializeAdmin = async () => {
       const insertValues = Object.values(adminUser); // Obtiene los valores del objeto usuario administrador
       await db.query(insertQuery, insertValues); // Ejecuta la consulta de inserción en la base de datos
 
-      console.log("Utilizador administrador creado exitosamente."); // Muestra un mensaje de éxito
+      console.log("Admin successfully created!");
     }
   } catch (error) {
-    // Manejo de errores
-    console.error("Error al crear el usuario administrador:", error); // Muestra el error en la consola
+    console.error("Error creating admin:", error);
   }
 };
 
-module.exports = initializeAdmin; // Exporta la función initializeAdmin para que pueda ser utilizada en otros archivos
+module.exports = initializeAdmin;
