@@ -4,7 +4,8 @@ const cors = require("cors");
 const morgan = require("morgan");
 const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
-
+const createAdmin = require("./models");
+// createAdmin;
 dotenv.config();
 app.use(morgan("dev"));
 app.use(express.json());
