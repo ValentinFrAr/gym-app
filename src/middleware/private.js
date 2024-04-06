@@ -37,7 +37,7 @@ exports.privateAdmin = (req, res, next) => {
       if (error) {
         return res.status(401).json({ message: "Invalid token" });
       }
-      if (user.is_admin === false) {
+      if (!user.is_admin) {
         return res.status(403).json({ message: "Access denied, only admin!" });
       }
       req.user = user;

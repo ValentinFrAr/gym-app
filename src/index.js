@@ -6,6 +6,7 @@ const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
 const initializeAdmin = require("./initializeAdmin");
 const { private } = require("./middleware/private");
+const insertExercisesToDB = require("./api.exercices");
 
 dotenv.config();
 app.use(morgan("dev"));
@@ -25,6 +26,7 @@ app.get("/api/private", private, (req, res) =>
 
 //Llamar la función para crear un admin
 initializeAdmin();
-
+// Insert exercices in DB
+insertExercisesToDB();
 app.listen(5000);
 console.log("Server on port 5000");
