@@ -18,6 +18,7 @@ app.use(
 );
 app.use(cookieParser());
 app.use("/api", require("./routes/auth.routes"));
+app.use("/api",require("./routes/plans.routes"));
 app.get("/api/private", private, (req, res) =>
   res.json({
     user: req.user,

@@ -1454,7 +1454,7 @@ const insertExercisesToDB = async () => {
     if (rowCount === 0) {
       for (const exercise of exercisesFromAPI) {
         const query = `
-          INSERT INTO exercises  (name, type, muscle, equipment, difficulty, instructions)
+          INSERT INTO gym.exercises  (name, type, muscle, equipment, difficulty, instructions)
           VALUES ($1, $2, $3, $4, $5, $6)
         `;
 
@@ -1473,6 +1473,8 @@ const insertExercisesToDB = async () => {
         console.log("Data successfully inserted into the database");
       }
     }
+    console.log("OK, exercises allready exists");
+
   } catch (error) {
     console.error("Error while inserting data into the database:", error);
   }
