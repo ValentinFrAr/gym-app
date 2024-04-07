@@ -81,7 +81,7 @@ exports.createUser = async (req, res, next) => {
     }
 
     const query =
-      "INSERT INTO gym.users (firstname, lastname, phone, sex, email, address, birthday, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)";
+      "INSERT INTO gym.users (firstname, lastname, phone, sex, email, address, birthday, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id";
 
     const values = [
       firstname,
@@ -94,11 +94,25 @@ exports.createUser = async (req, res, next) => {
       hash,
     ];
 
-    db.query(query, values, (error, results, fields) => {
+    db.query(query, values, async (error, userResults) => {
       if (error) {
         return res
           .status(400)
-          .json({ message: "Error creando user", error: error.message });
+          .json({ message: "Error creating user", error: error.message });
+      }
+      console.log(userResults);
+      const userId = userResults.rows[0].id;
+
+      // Insert a new row into the 'plan' table with 'inactive' status
+      const planQuery = "INSERT INTO gym.plans (user_id, plan) VALUES ($1, $2)";
+      const planValues = [userId, "inactive"];
+
+      try {
+        await db.query(planQuery, planValues);
+      } catch (err) {
+        return res
+          .status(500)
+          .json({ message: "Error creating plan", error: err.message });
       }
 
       sendConfirmationEmail(email, firstname, lastname);
@@ -118,8 +132,8 @@ exports.createUser = async (req, res, next) => {
       });
 
       res.status(201).json({
-        message: "User creado exitosamente",
-        patient: results.insertId,
+        message: "User created successfully",
+        user: userResults.insertId,
       });
     });
   });
@@ -223,18 +237,30 @@ exports.updateUser = async (req, res, next) => {
 
 exports.deleteUser = async (req, res, next) => {
   const id = req.params.id;
-  const query = "DELETE FROM gym.users WHERE id = $1";
-  const value = [id];
-  db.query(query, value, (error, results, fields) => {
-    if (error) {
-      return res
-        .status(400)
-        .json({ message: "Error deleting user", error: error.message });
-    }
-    return res
+  const deleteUserQuery = "DELETE FROM gym.users WHERE id = $1";
+  const deletePlansQuery = "DELETE FROM gym.plans WHERE user_id = $1";
+
+  try {
+    // Eliminar el usuario y el plan asociado
+    await db.query(deletePlansQuery, [id]);
+    await db.query(deleteUserQuery, [id]);
+
+    // Enviar una respuesta exitosa al cliente
+    res
       .status(200)
-      .json({ message: "User deleted successfulyl", id: id });
-  });
+      .json({
+        message: "User and associated plan deleted successfully",
+        id: id,
+      });
+  } catch (error) {
+    // Manejar cualquier error que ocurra durante las consultas
+    res
+      .status(400)
+      .json({
+        message: "Error deleting user and associated plan",
+        error: error.message,
+      });
+  }
 };
 
 //////////////////////// GET USER BY ID
