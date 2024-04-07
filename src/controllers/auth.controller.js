@@ -198,7 +198,6 @@ exports.login = async (req, res, next) => {
 exports.updateUser = async (req, res, next) => {
   const { email, phone, address, is_admin, password } = req.body;
   const id = req.params.id;
-  console.log(req.body);
   try {
     let hash = password ? await bcrypt.hash(password, 10) : null;
     const query =
@@ -209,7 +208,6 @@ exports.updateUser = async (req, res, next) => {
       ? [email, phone, address, is_admin, hash, id]
       : [email, phone, address, is_admin, id];
     await db.query(query, values);
-    console.log(id);
     return res
       .status(201)
       .json({ message: "User updated successfully", user: id });

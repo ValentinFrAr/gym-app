@@ -1447,29 +1447,32 @@ const exercisesFromAPI = [
 // Fonction pour insérer les exercices dans la base de données
 const insertExercisesToDB = async () => {
   try {
-    // Parcours des exercices de l'API
-    for (const exercise of exercisesFromAPI) {
-      // Requête SQL pour insérer l'exercice dans la base de données
-      const query = `
-        INSERT INTO exercises  (name, type, muscle, equipment, difficulty, instructions)
-        VALUES ($1, $2, $3, $4, $5, $6)
-      `;
+    const queryIfExist = "SELECT COUNT(*) FROM gym.exercises";
+    const result = await db.query(queryIfExist);
+    const rowCount = parseInt(result.rows[0].count);
 
-      // Valeurs à insérer dans la base de données
-      const values = [
-        exercise.name,
-        exercise.type,
-        exercise.muscle,
-        exercise.equipment,
-        exercise.difficulty,
-        exercise.instructions,
-      ];
+    if (rowCount === 0) {
+      for (const exercise of exercisesFromAPI) {
+        const query = `
+          INSERT INTO exercises  (name, type, muscle, equipment, difficulty, instructions)
+          VALUES ($1, $2, $3, $4, $5, $6)
+        `;
 
-      // Exécution de la requête d'insertion
-      await db.query(query, values);
+        // Valeurs à insérer dans la base de données
+        const values = [
+          exercise.name,
+          exercise.type,
+          exercise.muscle,
+          exercise.equipment,
+          exercise.difficulty,
+          exercise.instructions,
+        ];
+
+        // Exécution de la requête d'insertion
+        await db.query(query, values);
+        console.log("Data successfully inserted into the database");
+      }
     }
-
-    console.log("Data successfully inserted into the database");
   } catch (error) {
     console.error("Error while inserting data into the database:", error);
   }
