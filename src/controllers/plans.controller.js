@@ -2,6 +2,7 @@ const dotenv = require("dotenv").config();
 const db = require("../db");
 const nodemailer = require("nodemailer");
 
+
 exports.subscribePlan = async (req, res, next) => {
   const user_id = req.params.id;
   const { plan, expires_date } = req.body;
@@ -17,3 +18,4 @@ exports.subscribePlan = async (req, res, next) => {
     return res.status(200).json({ message: "Plan subscribed successfully" });
   });
 };
+
