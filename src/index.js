@@ -21,6 +21,9 @@ app.use("/api", require("./routes/auth.routes"));
 app.use("/api", require("./routes/plans.routes"));
 app.use("/api", require("./routes/recipes.routes"));
 app.use("/api", require("./routes/programs.routes"));
+app.use("/api", require("./routes/exercises.routes"));
+app.use("/api", require("./routes/routines.routes"));
+
 app.get("/api/private", private, (req, res) =>
   res.json({
     user: req.user,
