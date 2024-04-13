@@ -15,6 +15,3 @@ exports.subscribePlan = async (req,res,next) => {
     })
 }
 
-exports.updatePlan = async (req,res,next) => {
-
-}
