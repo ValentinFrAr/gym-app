@@ -100,7 +100,6 @@ exports.createUser = async (req, res, next) => {
           .status(400)
           .json({ message: "Error creating user", error: error.message });
       }
-      console.log(userResults);
       const userId = userResults.rows[0].id;
 
       // Insert a new row into the 'plan' table with 'inactive' status
@@ -246,20 +245,16 @@ exports.deleteUser = async (req, res, next) => {
     await db.query(deleteUserQuery, [id]);
 
     // Enviar una respuesta exitosa al cliente
-    res
-      .status(200)
-      .json({
-        message: "User and associated plan deleted successfully",
-        id: id,
-      });
+    res.status(200).json({
+      message: "User and associated plan deleted successfully",
+      id: id,
+    });
   } catch (error) {
     // Manejar cualquier error que ocurra durante las consultas
-    res
-      .status(400)
-      .json({
-        message: "Error deleting user and associated plan",
-        error: error.message,
-      });
+    res.status(400).json({
+      message: "Error deleting user and associated plan",
+      error: error.message,
+    });
   }
 };
 
