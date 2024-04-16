@@ -17,15 +17,16 @@ app.use(
   })
 );
 app.use(cookieParser());
-app.use("/api", require("./routes/auth.routes"));
-app.use("/api", require("./routes/plans.routes"));
-app.use("/api", require("./routes/recipes.routes"));
-app.use("/api", require("./routes/programs.routes"));
 app.get("/api/private", private, (req, res) =>
   res.json({
     user: req.user,
   })
 );
+app.use("/api", require("./routes/auth.routes"));
+app.use("/api", require("./routes/plans.routes"));
+app.use("/api", require("./routes/recipes.routes"));
+app.use("/api", require("./routes/programs.routes"));
+app.use("/api", require("./routes/fav.programs.routes"));
 
 //Llamar la función para crear un admin
 initializeAdmin();

@@ -118,7 +118,7 @@ exports.createUser = async (req, res, next) => {
 
       const maxAge = 3 * 60 * 60;
       const token = jwt.sign(
-        { firstname, lastname, phone, sex, email, address, birthday },
+        { userId, firstname, lastname, phone, sex, email, address, birthday },
         process.env.JwtSecret,
         {
           expiresIn: maxAge,
@@ -179,6 +179,7 @@ exports.login = async (req, res, next) => {
             firstname: user.firstname,
             lastname: user.lastname,
             address: user.address,
+            is_admin: user.is_admin,
           },
           process.env.jwtSecret,
           {
