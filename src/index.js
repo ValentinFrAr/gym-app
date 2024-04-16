@@ -27,6 +27,8 @@ app.use("/api", require("./routes/plans.routes"));
 app.use("/api", require("./routes/recipes.routes"));
 app.use("/api", require("./routes/programs.routes"));
 app.use("/api", require("./routes/fav.programs.routes"));
+app.use("/api", require("./routes/exercises.routes"));
+app.use("/api", require("./routes/routines.routes"));
 
 //Llamar la función para crear un admin
 initializeAdmin();
