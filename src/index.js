@@ -23,6 +23,8 @@ app.use("/api", require("./routes/recipes.routes"));
 app.use("/api", require("./routes/programs.routes"));
 app.use("/api", require("./routes/exercises.routes"));
 app.use("/api", require("./routes/routines.routes"));
+app.use("/api", require("./routes/prog_reviews.routes"));
+
 
 app.get("/api/private", private, (req, res) =>
   res.json({
