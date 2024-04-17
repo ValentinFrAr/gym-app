@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 const initializeAdmin = require("./initializeAdmin");
 const { private } = require("./middleware/private");
 const insertExercisesToDB = require("./api.exercices");
+const routes = require("./routes");
 
 dotenv.config();
 app.use(morgan("dev"));
@@ -17,20 +18,12 @@ app.use(
   })
 );
 app.use(cookieParser());
-app.use("/api", require("./routes/auth.routes"));
-app.use("/api", require("./routes/plans.routes"));
-app.use("/api", require("./routes/recipes.routes"));
-app.use("/api", require("./routes/programs.routes"));
-app.use("/api", require("./routes/exercises.routes"));
-app.use("/api", require("./routes/routines.routes"));
-app.use("/api", require("./routes/prog_reviews.routes"));
-
-
 app.get("/api/private", private, (req, res) =>
   res.json({
     user: req.user,
   })
 );
+app.use("/api", routes);
 
 //Llamar la función para crear un admin
 initializeAdmin();
