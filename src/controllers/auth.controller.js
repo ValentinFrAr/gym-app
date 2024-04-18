@@ -4,7 +4,8 @@ const jwt = require("jsonwebtoken");
 const db = require("../db");
 const nodemailer = require("nodemailer");
 
-const sendConfirmationEmail = (email, firstname, lastname) => {
+///////////
+const sendConfirmationCreatedAccountEmail = (email, firstname, lastname) => {
   const EMAIL = process.env.USERMAIL;
   const PASSWORD = process.env.PASSMAIL;
 
@@ -55,6 +56,66 @@ const sendConfirmationEmail = (email, firstname, lastname) => {
     .sendMail(message)
     .then(() => {
       console.log("Email sent");
+    })
+    .catch((error) => {
+      console.error("Error sending email", error);
+    });
+};
+
+///////////////
+
+const sendConfirmationDeletedAccount = async (email, firstname, lastname) => {
+  const EMAIL = process.env.USERMAIL;
+  const PASSWORD = process.env.PASSMAIL;
+
+  let config = {
+    service: "gmail",
+    auth: {
+      user: EMAIL,
+      pass: PASSWORD,
+    },
+  };
+
+  let transporter = nodemailer.createTransport(config);
+
+  const htmlContent = `
+  <html>
+<head>
+</head>
+<body>
+  <div>
+  <h1>Account Deletion Confirmation Gym'App</h1>
+  <a href="https://ibb.co/XYGsgdY"><img src="https://i.ibb.co/xFrj0cF/logo.jpg" alt="logo" border="0"></a>
+  <h2>User Deleted Successfully</h2>
+  <p>Hello ${firstname} ${lastname}! 
+  Your account has been successfully deleted from our system. We want to thank you for being part of our gym community. While we're sad to see you go, we understand that circumstances change, and we respect your decision.
+  
+  If you ever decide to return, we'll be here to welcome you back with open arms. In the meantime, we wish you all the best in your fitness journey and in everything you do.
+  
+  If you have any questions or need further assistance, please don't hesitate to reach out to our gym staff.
+  
+  Take care, and best wishes for the future!
+  
+  The Gym'App Team</p>
+  
+  <h2>We look forward to seeing you again! 💪</h2>
+  </div>
+</body>
+</html>
+
+  `;
+
+  let message = {
+    from: EMAIL,
+    to: email,
+    subject: "Account Deletion Confirmation",
+    html: htmlContent,
+  };
+
+  transporter
+    .sendMail(message)
+    .then(() => {
+      console.log("email sent");
     })
     .catch((error) => {
       console.error("Error sending email", error);
@@ -114,25 +175,10 @@ exports.createUser = async (req, res, next) => {
           .json({ message: "Error creating plan", error: err.message });
       }
 
-      sendConfirmationEmail(email, firstname, lastname);
-
-      const maxAge = 3 * 60 * 60;
-      const token = jwt.sign(
-        { userId, firstname, lastname, phone, sex, email, address, birthday },
-        process.env.JwtSecret,
-        {
-          expiresIn: maxAge,
-        }
-      );
-
-      res.cookie("token", token, {
-        httpOnly: true,
-        maxAge: maxAge * 1000,
-      });
+      sendConfirmationCreatedAccountEmail(email, firstname, lastname);
 
       res.status(201).json({
         message: "User created successfully",
-        user: userResults.insertId,
       });
     });
   });
@@ -166,8 +212,6 @@ exports.login = async (req, res, next) => {
       if (err) {
         return res.status(500).json({ message: "Contraseña invalida" });
       }
-      console.log(password, user.password, result);
-      console.log(user);
       if (result) {
         const maxAge = 3 * 60 * 60;
         const token = jwt.sign(
@@ -193,7 +237,7 @@ exports.login = async (req, res, next) => {
         return res.status(201).json({
           message: "Inicio de sesion exitoso",
           status: 201,
-          users: results.rows,
+          // user: results.rows,
           token: token,
         });
       } else {
@@ -237,6 +281,7 @@ exports.updateUser = async (req, res, next) => {
 
 exports.deleteUser = async (req, res, next) => {
   const id = req.params.id;
+  const { email, firstname, lastname } = req.body;
   const deleteUserQuery = "DELETE FROM gym.users WHERE id = $1";
   const deletePlansQuery = "DELETE FROM gym.plans WHERE user_id = $1";
 
@@ -244,6 +289,7 @@ exports.deleteUser = async (req, res, next) => {
     // Eliminar el usuario y el plan asociado
     await db.query(deletePlansQuery, [id]);
     await db.query(deleteUserQuery, [id]);
+    sendConfirmationDeletedAccount(email, firstname, lastname);
 
     // Enviar una respuesta exitosa al cliente
     res.status(200).json({
@@ -266,20 +312,23 @@ exports.getUserById = async (req, res, next) => {
   const query = "SELECT * FROM gym.users WHERE id = $1";
   const values = [id];
 
-  const responseQuery = await db.query(
-    query,
-    values,
-    (error, results, fields) => {
-      if (error) {
-        return res
-          .status(400)
-          .json({ message: "User not found", error: error.message });
-      }
-
-      const user = results.rows[0];
-      return res.status(200).json({ user, responseQuery });
+  await db.query(query, values, (error, results, fields) => {
+    if (error) {
+      return res
+        .status(400)
+        .json({ message: "User not found", error: error.message });
     }
-  );
+    const token = jwt.sign(
+      {
+        user: results.rows[0],
+      },
+      process.env.jwtSecret
+    );
+    // const user = results.rows[0];
+    return res
+      .status(200)
+      .json({ message: "User getting successfully", token });
+  });
 };
 
 ////////////////////// GET ALL USERS
