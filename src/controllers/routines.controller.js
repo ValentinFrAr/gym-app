@@ -62,7 +62,7 @@ const sendNewRoutineEmail = (email, firstname, lastname, name , user_calendar) =
 //////////////
 
 exports.createRoutine = async (req, res, next) => {
-  const { day, programId, name, description, userCalendar } = req.body;
+  const { day, programId, name, description, userCalendar, email, firstname, lastname } = req.body;
   const query =
     "INSERT INTO gym.routines (day, program_id, name, description, user_calendar) VALUES ($1, $2, $3, $4, $5) RETURNING id";
   const values = [day, programId, name, description, userCalendar];
@@ -73,6 +73,7 @@ exports.createRoutine = async (req, res, next) => {
         .json({ message: "Create routine failed", error: error.message });
     }
     const response = results.rows[0].id;
+    sendNewRoutineEmail(email, firstname, lastname, name , userCalendar)
     return res
       .status(201)
       .json({ message: "Routine created successfully", response: response });
