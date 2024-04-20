@@ -126,3 +126,34 @@ exports.deleteProgram = async (req, res, next) => {
     });
   });
 };
+
+/////////////
+exports.getPrograms = async (req, res, next) => {
+  const query = "SELECT * FROM gym.programs";
+  db.query(query, (error, results) => {
+    if (error) {
+      res
+        .status(400)
+        .json({ message: "Error getting programs", error: error.message });
+    }
+    res
+      .status(200)
+      .json({ message: "Programs got successfully", programs: results.rows });
+  });
+};
+
+//////////////
+exports.getProgramById = async (req, res, next) => {
+  const programId = req.params.id;
+  const query = "SELECT * FROM gym.programs WHERE id = $1";
+  db.query(query, [programId], (error, results) => {
+    if (error) {
+      res
+        .status(400)
+        .json({ message: "Error getting program", error: error.message });
+    }
+    res
+      .status(200)
+      .json({ message: "Program got successfully", program: results.rows[0] });
+  });
+};

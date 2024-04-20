@@ -6,11 +6,13 @@ const {
   getRecipe,
   getAllRecipes,
 } = require("../controllers/recipes.controller");
+const { private } = require("../middleware/private");
+
 const router = express.Router();
 //example:  router.route("/route").method(function);//
-router.route("/create-recipe").post(createRecipe);
-router.route("/update-recipe/:id").put(updateRecipe);
-router.route("/delete-recipe/:id").delete(deleteRecipe);
+router.route("/create-recipe").post(private, createRecipe);
+router.route("/update-recipe/:id").put(private, updateRecipe);
+router.route("/delete-recipe/:id").delete(private, deleteRecipe);
 router.route("/get-recipe/:id").get(getRecipe);
 router.route("/get-all-recipes").get(getAllRecipes);
 
