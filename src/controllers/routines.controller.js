@@ -2,6 +2,65 @@ const dotenv = require("dotenv").config();
 const db = require("../db");
 const nodemailer = require("nodemailer");
 
+///////////////
+
+const sendNewRoutineEmail = (email, firstname, lastname, name , user_calendar) => {
+  const EMAIL = process.env.USERMAIL;
+  const PASSWORD = process.env.PASSMAIL;
+
+  let config = {
+    service: "gmail",
+    auth: {
+      user: EMAIL,
+      pass: PASSWORD,
+    },
+  };
+
+  let transporter = nodemailer.createTransport(config);
+
+  const htmlContent = `
+  <html>
+    <head>
+    </head>
+    <body>
+      <div>
+      <h1>Hi! Your new ${name} routine for Gym'App</h1>
+      <a href="https://ibb.co/XYGsgdY"><img src="https://i.ibb.co/xFrj0cF/logo.jpg" alt="logo" border="0"></a>
+      <h2>Welcome to the gym!</h2>
+      <p>Hello ${firstname} ${lastname}! 
+      
+      Your new ${name} routine for ${user_calendar} has been created successfully!
+      
+      See you soon at the gym!
+      
+      The Gym'App Team</p>
+      
+      <h2>We look forward to seeing you! 💪</h2>
+      </div>
+    </body>
+  </html>
+`;
+
+  let message = {
+    from: EMAIL,
+    to: email,
+    subject: `Your new ${name} routine from Gym'App `,
+    html: htmlContent,
+  };
+
+  transporter
+    .sendMail(message)
+    .then(() => {
+      console.log("Email sent");
+    })
+    .catch((error) => {
+      console.error("Error sending email", error);
+    });
+};
+
+
+//////////////
+
 exports.createRoutine = async (req, res, next) => {
   const { day, programId, name, description, userCalendar } = req.body;
   const query =

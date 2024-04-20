@@ -184,6 +184,62 @@ exports.createUser = async (req, res, next) => {
   });
 };
 
+///////////////////////// 
+
+const sendConfirmationUpdatedAccountEmail = (email, firstname, lastname) => {
+  const EMAIL = process.env.USERMAIL;
+  const PASSWORD = process.env.PASSMAIL;
+
+  let config = {
+    service: "gmail",
+    auth: {
+      user: EMAIL,
+      pass: PASSWORD,
+    },
+  };
+
+  let transporter = nodemailer.createTransport(config);
+
+  const htmlContent = `
+  <html>
+    <head>
+    </head>
+    <body>
+      <div>
+      <h1>Hi! There is a message from Gym'App</h1>
+      <a href="https://ibb.co/XYGsgdY"><img src="https://i.ibb.co/xFrj0cF/logo.jpg" alt="logo" border="0"></a>
+      <h2>Welcome to the gym!</h2>
+      <p>Hello ${firstname} ${lastname}! 
+      
+      Your account data has been updated successfully!
+      
+      See you soon at the gym!
+      
+      The Gym'App Team</p>
+      
+      <h2>We look forward to seeing you! 💪</h2>
+      </div>
+    </body>
+  </html>
+`;
+
+  let message = {
+    from: EMAIL,
+    to: email,
+    subject: "A message from Gym'App ",
+    html: htmlContent,
+  };
+
+  transporter
+    .sendMail(message)
+    .then(() => {
+      console.log("Email sent");
+    })
+    .catch((error) => {
+      console.error("Error sending email", error);
+    });
+};
+
 ///////////////////////// LOGIN
 
 exports.login = async (req, res, next) => {
@@ -251,10 +307,10 @@ exports.login = async (req, res, next) => {
   });
 };
 
-///////////////////////// UPDATE
+///////////////////////// UPDATE ///////////////////
 
 exports.updateUser = async (req, res, next) => {
-  const { email, phone, address, is_admin, password } = req.body;
+  const { email, phone, address, is_admin, password, firstname, lastname } = req.body;
   const id = req.params.id;
   try {
     let hash = password ? await bcrypt.hash(password, 10) : null;
@@ -270,6 +326,8 @@ exports.updateUser = async (req, res, next) => {
       .status(201)
       .json({ message: "User updated successfully", user: id });
   } catch (error) {
+
+    sendConfirmationUpdatedAccountEmail(email, firstname, lastname);
     return res.status(500).json({
       message: "Error updating user",
       error: error.message,
@@ -277,7 +335,7 @@ exports.updateUser = async (req, res, next) => {
   }
 };
 
-///////////////////////// DELETE
+///////////////////////// DELETE ////////////////
 
 exports.deleteUser = async (req, res, next) => {
   const id = req.params.id;
@@ -305,7 +363,7 @@ exports.deleteUser = async (req, res, next) => {
   }
 };
 
-//////////////////////// GET USER BY ID
+//////////////////////// GET USER BY ID  //////////////////
 
 exports.getUserById = async (req, res, next) => {
   const id = req.params.id;
