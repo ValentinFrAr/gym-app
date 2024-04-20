@@ -63,7 +63,6 @@ const sendConfirmationCreatedAccountEmail = (email, firstname, lastname) => {
 };
 
 ///////////////
-
 const sendConfirmationDeletedAccount = async (email, firstname, lastname) => {
   const EMAIL = process.env.USERMAIL;
   const PASSWORD = process.env.PASSMAIL;
@@ -324,7 +323,6 @@ exports.getUserById = async (req, res, next) => {
       },
       process.env.jwtSecret
     );
-    // const user = results.rows[0];
     return res
       .status(200)
       .json({ message: "User getting successfully", token });
@@ -340,6 +338,13 @@ exports.getAllUsers = async (req, res, next) => {
     if (error) {
       res.status(400).json({ message: "User not found", error: error.message });
     }
-    res.status(200).json(results.rows);
+
+    const codedData = jwt.sign(
+      {
+        users: results.rows,
+      },
+      process.env.jwtSecret
+    );
+    res.status(200).json({ codedData });
   });
 };

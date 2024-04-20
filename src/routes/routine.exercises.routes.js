@@ -4,10 +4,14 @@ const {
   deleteExerciseFromRoutine,
   getRoutineExercises,
 } = require("../controllers/routine.exercises.controller");
+const { private } = require("../middleware/private");
+
 const router = express.Router();
 
-router.route("/add-exercise-routine").post(addExerciseToRoutine);
-router.route("/delete-exercise-routine/:id").delete(deleteExerciseFromRoutine);
+router.route("/add-exercise-routine").post(private, addExerciseToRoutine);
+router
+  .route("/delete-exercise-routine/:id")
+  .delete(private, deleteExerciseFromRoutine);
 router.route("/get-exercise-routine/:id").get(getRoutineExercises);
 
 module.exports = router;
