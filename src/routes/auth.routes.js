@@ -8,12 +8,13 @@ const {
   getUserById,
   getAllUsers,
 } = require("../controllers/auth.controller");
+const { privateAdmin, private } = require("../middleware/private");
 
 router.route("/register").post(createUser);
 router.route("/login").post(login);
-router.route("/update/:id").put(updateUser);
-router.route("/delete/:id").delete(deleteUser);
-router.route("/user/:id").get(getUserById);
-router.route("/users").get(getAllUsers);
+router.route("/update/:id").put(private, updateUser);
+router.route("/delete/:id").delete(private, deleteUser);
+router.route("/user/:id").get(private, getUserById);
+router.route("/users").get(privateAdmin, getAllUsers);
 
 module.exports = router;
