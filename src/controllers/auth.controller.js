@@ -121,6 +121,61 @@ const sendConfirmationDeletedAccount = async (email, firstname, lastname) => {
     });
 };
 
+/////////////////////////
+const sendConfirmationUpdatedAccountEmail = (email, firstname, lastname) => {
+  const EMAIL = process.env.USERMAIL;
+  const PASSWORD = process.env.PASSMAIL;
+
+  let config = {
+    service: "gmail",
+    auth: {
+      user: EMAIL,
+      pass: PASSWORD,
+    },
+  };
+
+  let transporter = nodemailer.createTransport(config);
+
+  const htmlContent = `
+  <html>
+    <head>
+    </head>
+    <body>
+      <div>
+      <h1>Hi! There is a message from Gym'App</h1>
+      <a href="https://ibb.co/XYGsgdY"><img src="https://i.ibb.co/xFrj0cF/logo.jpg" alt="logo" border="0"></a>
+      <h2>Welcome to the gym!</h2>
+      <p>Hello ${firstname} ${lastname}! 
+      
+      Your account data has been updated successfully!
+      
+      See you soon at the gym!
+      
+      The Gym'App Team</p>
+      
+      <h2>We look forward to seeing you! 💪</h2>
+      </div>
+    </body>
+  </html>
+`;
+
+  let message = {
+    from: EMAIL,
+    to: email,
+    subject: "A message from Gym'App ",
+    html: htmlContent,
+  };
+
+  transporter
+    .sendMail(message)
+    .then(() => {
+      console.log("Email sent");
+    })
+    .catch((error) => {
+      console.error("Error sending email", error);
+    });
+};
+
 ///////////////////////// REGISTER
 
 exports.createUser = async (req, res, next) => {
@@ -181,62 +236,6 @@ exports.createUser = async (req, res, next) => {
       });
     });
   });
-};
-
-///////////////////////// 
-
-const sendConfirmationUpdatedAccountEmail = (email, firstname, lastname) => {
-  const EMAIL = process.env.USERMAIL;
-  const PASSWORD = process.env.PASSMAIL;
-
-  let config = {
-    service: "gmail",
-    auth: {
-      user: EMAIL,
-      pass: PASSWORD,
-    },
-  };
-
-  let transporter = nodemailer.createTransport(config);
-
-  const htmlContent = `
-  <html>
-    <head>
-    </head>
-    <body>
-      <div>
-      <h1>Hi! There is a message from Gym'App</h1>
-      <a href="https://ibb.co/XYGsgdY"><img src="https://i.ibb.co/xFrj0cF/logo.jpg" alt="logo" border="0"></a>
-      <h2>Welcome to the gym!</h2>
-      <p>Hello ${firstname} ${lastname}! 
-      
-      Your account data has been updated successfully!
-      
-      See you soon at the gym!
-      
-      The Gym'App Team</p>
-      
-      <h2>We look forward to seeing you! 💪</h2>
-      </div>
-    </body>
-  </html>
-`;
-
-  let message = {
-    from: EMAIL,
-    to: email,
-    subject: "A message from Gym'App ",
-    html: htmlContent,
-  };
-
-  transporter
-    .sendMail(message)
-    .then(() => {
-      console.log("Email sent");
-    })
-    .catch((error) => {
-      console.error("Error sending email", error);
-    });
 };
 
 ///////////////////////// LOGIN
@@ -309,7 +308,8 @@ exports.login = async (req, res, next) => {
 ///////////////////////// UPDATE ///////////////////
 
 exports.updateUser = async (req, res, next) => {
-  const { email, phone, address, is_admin, password, firstname, lastname } = req.body;
+  const { email, phone, address, is_admin, password, firstname, lastname } =
+    req.body;
   const id = req.params.id;
   try {
     let hash = password ? await bcrypt.hash(password, 10) : null;
@@ -325,7 +325,6 @@ exports.updateUser = async (req, res, next) => {
       .status(201)
       .json({ message: "User updated successfully", user: id });
   } catch (error) {
-
     sendConfirmationUpdatedAccountEmail(email, firstname, lastname);
     return res.status(500).json({
       message: "Error updating user",
@@ -338,7 +337,6 @@ exports.updateUser = async (req, res, next) => {
 
 exports.deleteUser = async (req, res, next) => {
   const id = req.params.id;
-  const { email, firstname, lastname } = req.body;
   const deleteUserQuery = "DELETE FROM gym.users WHERE id = $1";
   const deletePlansQuery = "DELETE FROM gym.plans WHERE user_id = $1";
 
@@ -346,7 +344,11 @@ exports.deleteUser = async (req, res, next) => {
     // Eliminar el usuario y el plan asociado
     await db.query(deletePlansQuery, [id]);
     await db.query(deleteUserQuery, [id]);
-    sendConfirmationDeletedAccount(email, firstname, lastname);
+    await sendConfirmationDeletedAccount(
+      req.user.email,
+      req.user.firstname,
+      req.user.lastname
+    );
 
     // Enviar una respuesta exitosa al cliente
     res.status(200).json({
@@ -390,7 +392,8 @@ exports.getUserById = async (req, res, next) => {
 ////////////////////// GET ALL USERS
 
 exports.getAllUsers = async (req, res, next) => {
-  const query = "SELECT * FROM gym.users";
+  const query =
+    "SELECT * FROM gym.users JOIN gym.plans ON gym.users.id = gym.plans.user_id";
 
   db.query(query, (error, results, fields) => {
     if (error) {

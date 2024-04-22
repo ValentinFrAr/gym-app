@@ -2,7 +2,7 @@ const dotenv = require("dotenv").config();
 const db = require("../db");
 const nodemailer = require("nodemailer");
 
-///////////////// 
+/////////////////
 
 const sendSubscribePlanEmail = (email, firstname, lastname, plan) => {
   const EMAIL = process.env.USERMAIL;
@@ -61,7 +61,7 @@ const sendSubscribePlanEmail = (email, firstname, lastname, plan) => {
 
 exports.subscribePlan = async (req, res, next) => {
   const user_id = req.params.id;
-  const { plan, expires_date, email , firstname, lastname } = req.body;
+  const { plan, expires_date, email, firstname, lastname } = req.body;
   const query =
     "UPDATE gym.plans SET plan = $1, expires_date = $2  WHERE user_id = $3";
   const values = [plan, expires_date, user_id];
@@ -76,3 +76,17 @@ exports.subscribePlan = async (req, res, next) => {
   });
 };
 
+////////////////
+exports.getAllPlans = async (req, res) => {
+  const query = "SELECT * FROM gym.plans ";
+  await db.query(query, (error, results) => {
+    if (error) {
+      res
+        .status(400)
+        .json({ messsage: "Error getting plans data", error: error.message });
+    }
+    res
+      .status(200)
+      .json({ message: "Data plans successfully got", plans: results.rows });
+  });
+};
