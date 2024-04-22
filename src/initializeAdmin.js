@@ -2,11 +2,11 @@ const bcrypt = require("bcryptjs"); // Importa el módulo bcrypt para el hash de
 const db = require("./db"); // Importa el módulo de conexión a la base de datos
 
 const initializeAdmin = async () => {
-  // Define una función asíncrona llamada initializeAdmin
   try {
-    const query = "SELECT COUNT(*) FROM gym.users"; // Consulta para contar el número de usuarios en la tabla
-    const result = await db.query(query); // Ejecuta la consulta y espera el resultado
-    const rowCount = parseInt(result.rows[0].count); // Obtiene el número de filas de la consulta
+    // Consulta para contar el número de usuarios en la tabla
+    const query = "SELECT COUNT(*) FROM gym.users";
+    const result = await db.query(query);
+    const rowCount = parseInt(result.rows[0].count);
 
     // Si la tabla de usuarios está vacía, inserta un usuario administrador
     if (rowCount === 0) {
@@ -18,9 +18,9 @@ const initializeAdmin = async () => {
         sex: "M",
         email: "admin@admin.com",
         address: "Admin Address",
-        birthday: "1990-01-01", // Fecha de nacimiento ficticia
-        password: "adminPassword", // Deberías generar un hash para la contraseña real
-        is_admin: true, // Establece el indicador de administrador en true
+        birthday: "1990-01-01",
+        password: "adminPassword", //generar un hash
+        is_admin: true,
       };
 
       // Hash de la contraseña del usuario administrador
@@ -29,11 +29,18 @@ const initializeAdmin = async () => {
 
       // Inserta el usuario administrador en la base de datos
       const insertQuery =
-        "INSERT INTO gym.users (firstname, lastname, phone, sex, email, address, birthday, password, is_admin) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)";
+        "INSERT INTO gym.users (firstname, lastname, phone, sex, email, address, birthday, password, is_admin) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id";
       const insertValues = Object.values(adminUser); // Obtiene los valores del objeto usuario administrador
-      await db.query(insertQuery, insertValues); // Ejecuta la consulta de inserción en la base de datos
+      const userResult = await db.query(insertQuery, insertValues); // Ejecuta la consulta de inserción en la base de datos
+      const userId = userResult.rows[0].id; // Obtiene el ID del usuario administrador recién creado
 
-      console.log("Admin successfully created!");
+      // Inserta una nueva fila en la tabla 'plans' con el plan 'premium' para el administrador
+      const insertPlanQuery =
+        "INSERT INTO gym.plans (user_id, plan) VALUES ($1, $2)";
+      const insertPlanValues = [userId, "premium"];
+      await db.query(insertPlanQuery, insertPlanValues);
+
+      console.log("Admin successfully created with premium plan!");
     }
   } catch (error) {
     console.error("Error creating admin:", error);
