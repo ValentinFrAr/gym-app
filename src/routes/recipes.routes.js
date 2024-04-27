@@ -9,7 +9,7 @@ const {
 const { private } = require("../middleware/private");
 
 const router = express.Router();
-//example:  router.route("/route").method(function);//
+
 router.route("/create-recipe").post(private, createRecipe);
 router.route("/update-recipe/:id").put(private, updateRecipe);
 router.route("/delete-recipe/:id").delete(private, deleteRecipe);

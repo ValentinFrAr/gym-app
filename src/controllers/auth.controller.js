@@ -3,6 +3,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const db = require("../db");
 const nodemailer = require("nodemailer");
+const fs = require("fs"); // Module pour gérer les fichiers
+const path = require("path");
 
 ///////////
 const sendConfirmationCreatedAccountEmail = (email, firstname, lastname) => {
@@ -176,6 +178,20 @@ const sendConfirmationUpdatedAccountEmail = (email, firstname, lastname) => {
     });
 };
 
+//////////////// UPLOAD USER'S PHOTO
+const upload = require("../config/multerConfig");
+
+// Contrôleur pour le téléversement de fichiers
+(exports.uploadPhoto = upload.single("photo")),
+  (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const photoUrl = req.file.path; // Chemin du fichier téléversé
+    res.json({ url: photoUrl }); // Répondre avec l'URL du fichier téléversé
+  };
+
 ///////////////////////// REGISTER
 
 exports.createUser = async (req, res, next) => {
@@ -190,13 +206,16 @@ exports.createUser = async (req, res, next) => {
     password,
   } = req.body;
 
+  // Récupérer le fichier d'image téléversé
+  const { file } = req;
+
   bcrypt.hash(password, 10, async (err, hash) => {
     if (err) {
       return res.status(500).json({ message: "Error hashing password" });
     }
 
     const query =
-      "INSERT INTO gym.users (firstname, lastname, phone, sex, email, address, birthday, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id";
+      "INSERT INTO gym.users (firstname, lastname, phone, sex, email, address, birthday, password, photo_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id";
 
     const values = [
       firstname,
@@ -207,6 +226,7 @@ exports.createUser = async (req, res, next) => {
       address,
       birthday,
       hash,
+      file ? `/uploads/${file.filename}` : null, // Si un fichier a été téléversé, enregistrez son URL dans la base de données
     ];
 
     db.query(query, values, async (error, userResults) => {
@@ -305,31 +325,48 @@ exports.login = async (req, res, next) => {
   });
 };
 
-///////////////////////// UPDATE ///////////////////
+///////////////////////// UPDATE
 
 exports.updateUser = async (req, res, next) => {
   const { email, phone, address, is_admin, password, firstname, lastname } =
     req.body;
   const id = req.params.id;
+
   try {
     let hash = password ? await bcrypt.hash(password, 10) : null;
-    const query =
-      "UPDATE gym.users SET email = $1, phone = $2, address = $3, is_admin = $4" +
-      (hash ? ", password = $5" : "") +
-      " WHERE id = $6";
-    const values = hash
-      ? [email, phone, address, is_admin, hash, id]
-      : [email, phone, address, is_admin, id];
+
+    let updateFields = "email = $1, phone = $2, address = $3, is_admin = $4";
+    let values = [email, phone, address, is_admin];
+
+    if (hash) {
+      updateFields += ", password = $5";
+      values.push(hash);
+    }
+    // Vérifie si un fichier a été téléversé
+    if (req.file) {
+      // Mettez ici la logique pour sauvegarder l'image dans votre serveur ou service de stockage
+      const photoUrl = req.file.path;
+      // Ajoutez le champ photo_url à la mise à jour
+      updateFields += ", photo_url = $6";
+      values.push(photoUrl);
+    }
+
+    const query = `UPDATE gym.users SET ${updateFields} WHERE id = $${
+      values.length + 1
+    }`;
+    values.push(id);
+
     await db.query(query, values);
+
+    sendConfirmationUpdatedAccountEmail(email, firstname, lastname);
+
     return res
       .status(201)
       .json({ message: "User updated successfully", user: id });
   } catch (error) {
-    sendConfirmationUpdatedAccountEmail(email, firstname, lastname);
-    return res.status(500).json({
-      message: "Error updating user",
-      error: error.message,
-    });
+    return res
+      .status(500)
+      .json({ message: "Error updating user", error: error.message });
   }
 };
 
@@ -394,7 +431,6 @@ exports.getUserById = async (req, res, next) => {
 exports.getAllUsers = async (req, res, next) => {
   const query =
     "SELECT * FROM gym.users JOIN gym.plans ON gym.users.id = gym.plans.user_id";
-
   db.query(query, (error, results, fields) => {
     if (error) {
       res.status(400).json({ message: "User not found", error: error.message });
