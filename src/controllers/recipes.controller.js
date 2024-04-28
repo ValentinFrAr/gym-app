@@ -61,7 +61,7 @@ exports.getRecipe = async (req, res, next) => {
     const recipe = results.rows[0];
     return res
       .status(200)
-      .json({ message: "Recipe get successfully", response: recipe });
+      .json({ message: "Recipe get successfully", recipe: recipe });
   });
 };
 

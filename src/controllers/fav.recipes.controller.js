@@ -1,10 +1,11 @@
 const db = require("../db");
 
 exports.addFavoriteRecipe = async (req, res, next) => {
-  const { user_id, recipe_id } = req.body;
+  const { userId, recipeId } = req.body;
   const query =
     "INSERT INTO gym.favorited_recipes (user_id , recipe_id) VALUES ($1, $2)";
-  const values = [user_id, recipe_id];
+  const values = [userId, recipeId];
+
   db.query(query, values, (error, results, fields) => {
     if (error) {
       return res.status(400).json({
@@ -12,15 +13,16 @@ exports.addFavoriteRecipe = async (req, res, next) => {
         error: error.message,
       });
     }
-    return res
-      .status(200)
-      .json({ message: "Favorite recipe added successfully" });
+    return res.status(200).json({
+      message: "Favorite recipe added successfully",
+      data: { data: { userId: userId, recipeId: recipeId } },
+    });
   });
 };
 
 exports.deleteFavoriteRecipe = async (req, res, next) => {
   const recipe_id = req.params.id;
-  const { user_id } = req.body;
+  const user_id = req.user.id;
   const query =
     "DELETE FROM gym.favorited_recipes WHERE user_id=$1 AND recipe_id=$2";
   const values = [user_id, recipe_id];
@@ -39,7 +41,7 @@ exports.deleteFavoriteRecipe = async (req, res, next) => {
 
 //////////////////
 exports.getAllFavoriterecipes = async (req, res, next) => {
-  const { userId } = req.body;
+  const userId = req.user.id;
   const query = "SELECT * FROM gym.favorited_recipes WHERE user_id = $1";
 
   db.query(query, [userId], (error, results) => {
