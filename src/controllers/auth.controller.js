@@ -3,8 +3,6 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const db = require("../db");
 const nodemailer = require("nodemailer");
-const fs = require("fs"); // Module pour gérer les fichiers
-const path = require("path");
 
 ///////////
 const sendConfirmationCreatedAccountEmail = (email, firstname, lastname) => {
@@ -178,20 +176,6 @@ const sendConfirmationUpdatedAccountEmail = (email, firstname, lastname) => {
     });
 };
 
-//////////////// UPLOAD USER'S PHOTO
-const upload = require("../config/multerConfig");
-
-// Contrôleur pour le téléversement de fichiers
-(exports.uploadPhoto = upload.single("photo")),
-  (req, res) => {
-    if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
-    }
-
-    const photoUrl = req.file.path; // Chemin du fichier téléversé
-    res.json({ url: photoUrl }); // Répondre avec l'URL du fichier téléversé
-  };
-
 ///////////////////////// REGISTER
 
 exports.createUser = async (req, res, next) => {
@@ -206,55 +190,58 @@ exports.createUser = async (req, res, next) => {
     password,
   } = req.body;
 
-  // Récupérer le fichier d'image téléversé
-  const { file } = req;
-
   bcrypt.hash(password, 10, async (err, hash) => {
     if (err) {
       return res.status(500).json({ message: "Error hashing password" });
     }
 
-    const query =
-      "INSERT INTO gym.users (firstname, lastname, phone, sex, email, address, birthday, password, photo_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id";
+    try {
+      const userQuery =
+        "INSERT INTO gym.users (firstname, lastname, phone, sex, email, address, birthday, password) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id";
+      const userValues = [
+        firstname,
+        lastname,
+        phone,
+        sex,
+        email,
+        address,
+        birthday,
+        hash,
+      ];
+      const userResult = await db.query(userQuery, userValues);
+      const userId = userResult.rows[0].id;
 
-    const values = [
-      firstname,
-      lastname,
-      phone,
-      sex,
-      email,
-      address,
-      birthday,
-      hash,
-      file ? `/uploads/${file.filename}` : null, // Si un fichier a été téléversé, enregistrez son URL dans la base de données
-    ];
-
-    db.query(query, values, async (error, userResults) => {
-      if (error) {
-        return res
-          .status(400)
-          .json({ message: "Error creating user", error: error.message });
+      let photoUrl;
+      if (sex === "M") {
+        photoUrl =
+          "https://www.francetvinfo.fr/pictures/RMhC9HFG1bBrXoJnqazwfd9KOSI/fit-in/720x/2019/04/12/hub_super01_cvr_1500_5b3e561f3788f5.51606704.jpg";
       }
-      const userId = userResults.rows[0].id;
+      if (sex === "F") {
+        photoUrl =
+          "https://www.mundodeportivo.com/alfabeta/hero/2023/11/wonder-woman.1698964414.6042.jpg?width=1200";
+      }
 
-      // Insert a new row into the 'plan' table with 'inactive' status
+      const userPhotoQuery =
+        "INSERT INTO gym.user_photos (user_id, photo_url) VALUES ($1, $2)";
+      const userPhotoValues = [userId, photoUrl];
+      await db.query(userPhotoQuery, userPhotoValues);
+
       const planQuery = "INSERT INTO gym.plans (user_id, plan) VALUES ($1, $2)";
       const planValues = [userId, "inactive"];
-
-      try {
-        await db.query(planQuery, planValues);
-      } catch (err) {
-        return res
-          .status(500)
-          .json({ message: "Error creating plan", error: err.message });
-      }
+      await db.query(planQuery, planValues);
 
       sendConfirmationCreatedAccountEmail(email, firstname, lastname);
 
       res.status(201).json({
         message: "User created successfully",
       });
-    });
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({
+        message: "Error creating user",
+        error: error.message,
+      });
+    }
   });
 };
 
@@ -342,14 +329,6 @@ exports.updateUser = async (req, res, next) => {
       updateFields += ", password = $5";
       values.push(hash);
     }
-    // Vérifie si un fichier a été téléversé
-    if (req.file) {
-      // Mettez ici la logique pour sauvegarder l'image dans votre serveur ou service de stockage
-      const photoUrl = req.file.path;
-      // Ajoutez le champ photo_url à la mise à jour
-      updateFields += ", photo_url = $6";
-      values.push(photoUrl);
-    }
 
     const query = `UPDATE gym.users SET ${updateFields} WHERE id = $${
       values.length + 1
@@ -405,9 +384,9 @@ exports.deleteUser = async (req, res, next) => {
 
 exports.getUserById = async (req, res, next) => {
   const id = req.params.id;
-  const query = "SELECT * FROM gym.users WHERE id = $1";
+  const query =
+    "SELECT * FROM gym.users JOIN gym.plans ON gym.users.id = gym.plans.user_id LEFT JOIN gym.user_photos ON gym.user_photos.user_id = gym.users.id WHERE gym.users.id = $1";
   const values = [id];
-
   await db.query(query, values, (error, results, fields) => {
     if (error) {
       return res
@@ -430,7 +409,7 @@ exports.getUserById = async (req, res, next) => {
 
 exports.getAllUsers = async (req, res, next) => {
   const query =
-    "SELECT * FROM gym.users JOIN gym.plans ON gym.users.id = gym.plans.user_id";
+    "SELECT * FROM gym.users JOIN gym.plans ON gym.users.id = gym.plans.user_id LEFT JOIN gym.user_photos ON gym.user_photos.user_id = gym.users.id";
   db.query(query, (error, results, fields) => {
     if (error) {
       res.status(400).json({ message: "User not found", error: error.message });
@@ -443,5 +422,60 @@ exports.getAllUsers = async (req, res, next) => {
       process.env.jwtSecret
     );
     res.status(200).json({ codedData });
+  });
+};
+
+///////////////////////////// IMAGES FUNCTIONS
+
+exports.uploadPhoto = async (req, res) => {
+  const userId = req.params.id;
+  const { file } = req;
+
+  if (!file) {
+    return res.status(400).json({ message: "No file uploaded" });
+  }
+
+  try {
+    const photoUrl = `${file.filename}`;
+
+    // Vérifier si l'utilisateur a déjà une photo dans la table user_photos
+    const checkPhotoQuery = "SELECT * FROM gym.user_photos WHERE user_id = $1";
+    const checkPhotoValues = [userId];
+    const { rows } = await db.query(checkPhotoQuery, checkPhotoValues);
+
+    if (rows && rows.length > 0) {
+      // L'utilisateur a déjà une photo, effectuer une mise à jour
+      const updatePhotoQuery =
+        "UPDATE gym.user_photos SET photo_url = $1 WHERE user_id = $2";
+      const updatePhotoValues = [photoUrl, userId];
+      await db.query(updatePhotoQuery, updatePhotoValues);
+    } else {
+      // L'utilisateur n'a pas de photo, effectuer un INSERT INTO
+      const insertPhotoQuery =
+        "INSERT INTO gym.user_photos (user_id, photo_url) VALUES ($1, $2)";
+      const insertPhotoValues = [userId, photoUrl];
+      await db.query(insertPhotoQuery, insertPhotoValues);
+    }
+
+    res.status(200).json({ message: "Photo updated successfully" });
+  } catch (error) {
+    console.error("Error updating photo:", error);
+    res
+      .status(500)
+      .json({ message: "Error updating photo", error: error.message });
+  }
+};
+
+// Middleware pour récupérer la photo de l'utilisateur
+exports.getPhoto = async (req, res) => {
+  const userId = req.params.id;
+  const query = "SELECT photo_url FROM gym.user_photos WHERE id = $1";
+  db.query(query, [userId], (error, results) => {
+    if (error) {
+      res
+        .status(400)
+        .json({ message: "Error getting user image", error: error.message });
+    }
+    res.status(200).json({ message: "Image got", photoUrl: results });
   });
 };
