@@ -3,7 +3,13 @@ const db = require("../db");
 
 /////////////
 
-const sendNewProgramEmail = (email, firstname, lastname, name , duration_program) => {
+const sendNewProgramEmail = (
+  email,
+  firstname,
+  lastname,
+  name,
+  duration_program
+) => {
   const EMAIL = process.env.USERMAIL;
   const PASSWORD = process.env.PASSMAIL;
 
@@ -60,7 +66,15 @@ const sendNewProgramEmail = (email, firstname, lastname, name , duration_program
 //////////////
 
 exports.createProgram = async (req, res, next) => {
-  const { name, description, weekly_routine, duration_program, firstname, lastname, email } = req.body;
+  const {
+    name,
+    description,
+    weekly_routine,
+    duration_program,
+    firstname,
+    lastname,
+    email,
+  } = req.body;
   const user_id = req.params.id;
   const queryCreateProgram =
     "INSERT INTO gym.programs (name, description, weekly_routine, duration_program, user_id) VALUES ($1, $2, $3, $4, $5)";
@@ -72,7 +86,7 @@ exports.createProgram = async (req, res, next) => {
         .status(400)
         .json({ message: "Error creating program", error: error.message });
     }
-    sendNewProgramEmail(email, firstname, lastname, name , duration_program)
+    sendNewProgramEmail(email, firstname, lastname, name, duration_program);
     res.status(201).json({
       message: "Program successfully created",
       program: results.insertId,
