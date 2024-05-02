@@ -383,7 +383,7 @@ exports.deleteUser = async (req, res, next) => {
 //////////////////////// GET USER BY ID  //////////////////
 
 exports.getUserById = async (req, res, next) => {
-  const id = req.params.id;
+  const id = req.user.id;
   const query =
     "SELECT * FROM gym.users JOIN gym.plans ON gym.users.id = gym.plans.user_id LEFT JOIN gym.user_photos ON gym.user_photos.user_id = gym.users.id WHERE gym.users.id = $1";
   const values = [id];
@@ -393,6 +393,7 @@ exports.getUserById = async (req, res, next) => {
         .status(400)
         .json({ message: "User not found", error: error.message });
     }
+    console.log(values);
     const token = jwt.sign(
       {
         user: results.rows[0],
@@ -438,19 +439,16 @@ exports.uploadPhoto = async (req, res) => {
   try {
     const photoUrl = `${file.filename}`;
 
-    // Vérifier si l'utilisateur a déjà une photo dans la table user_photos
     const checkPhotoQuery = "SELECT * FROM gym.user_photos WHERE user_id = $1";
     const checkPhotoValues = [userId];
     const { rows } = await db.query(checkPhotoQuery, checkPhotoValues);
 
     if (rows && rows.length > 0) {
-      // L'utilisateur a déjà une photo, effectuer une mise à jour
       const updatePhotoQuery =
         "UPDATE gym.user_photos SET photo_url = $1 WHERE user_id = $2";
       const updatePhotoValues = [photoUrl, userId];
       await db.query(updatePhotoQuery, updatePhotoValues);
     } else {
-      // L'utilisateur n'a pas de photo, effectuer un INSERT INTO
       const insertPhotoQuery =
         "INSERT INTO gym.user_photos (user_id, photo_url) VALUES ($1, $2)";
       const insertPhotoValues = [userId, photoUrl];
