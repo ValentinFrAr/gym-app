@@ -8,8 +8,12 @@ const initializeAdmin = require("./initializeAdmin");
 const { private } = require("./middleware/private");
 const insertExercisesToDB = require("./api.exercices");
 const routes = require("./routes");
+const path = require("path");
 
 dotenv.config();
+const uploadDir = path.join(__dirname, "./uploads");
+app.use("/uploads", express.static(uploadDir));
+
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(
@@ -23,6 +27,7 @@ app.get("/api/private", private, (req, res) =>
     user: req.user,
   })
 );
+
 app.use("/api", routes);
 
 //Llamar la función para crear un admin

@@ -34,6 +34,14 @@ const initializeAdmin = async () => {
       const userResult = await db.query(insertQuery, insertValues); // Ejecuta la consulta de inserción en la base de datos
       const userId = userResult.rows[0].id; // Obtiene el ID del usuario administrador recién creado
 
+      let photoUrl =
+        "https://static.wixstatic.com/media/af1176_b92bd7923fa3444f9f0d3c2f423463fe~mv2.jpg/v1/crop/x_0,y_309,w_1179,h_1370/fill/w_560,h_650,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/IMG_2021.jpg";
+
+      const userPhotoQuery =
+        "INSERT INTO gym.user_photos (user_id, photo_url) VALUES ($1, $2)";
+      const userPhotoValues = [userId, photoUrl];
+      await db.query(userPhotoQuery, userPhotoValues);
+
       // Inserta una nueva fila en la tabla 'plans' con el plan 'premium' para el administrador
       const insertPlanQuery =
         "INSERT INTO gym.plans (user_id, plan) VALUES ($1, $2)";

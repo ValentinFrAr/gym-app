@@ -31,7 +31,6 @@ exports.updateRecipe = async (req, res, next) => {
         .status(400)
         .json({ message: "Recipe update failed", error: error.message });
     }
-    console.log(values);
     return res.status(200).json({ message: "Recipe updated successfully" });
   });
 };
