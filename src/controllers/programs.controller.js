@@ -60,10 +60,10 @@ const sendNewProgramEmail = (email, firstname, lastname, name , duration_program
 //////////////
 
 exports.createProgram = async (req, res, next) => {
-  const { name, description, weekly_routine, duration_program, firstname, lastname, email } = req.body;
+  const { name, description, weekly_routine, duration_program } = req.body;
   const user_id = req.params.id;
   const queryCreateProgram =
-    "INSERT INTO gym.programs (name, description, weekly_routine, duration_program, user_id) VALUES ($1, $2, $3, $4, $5)";
+    "INSERT INTO gym.programs (name, description, weekly_routine, duration_program, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING id";
   const values = [name, description, weekly_routine, duration_program, user_id];
 
   db.query(queryCreateProgram, values, (error, results) => {
@@ -72,10 +72,10 @@ exports.createProgram = async (req, res, next) => {
         .status(400)
         .json({ message: "Error creating program", error: error.message });
     }
-    sendNewProgramEmail(email, firstname, lastname, name , duration_program)
+    sendNewProgramEmail(req.user.email, req.user.firstname, req.user.lastname, name , duration_program);
     res.status(201).json({
       message: "Program successfully created",
-      program: results.insertId,
+      program: results.rows[0].id,
     });
   });
 };

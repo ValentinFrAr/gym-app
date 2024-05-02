@@ -72,7 +72,7 @@ exports.subscribePlan = async (req, res, next) => {
         .json({ message: "Error subscribing plan", error: error.message });
     }
     sendSubscribePlanEmail(email, firstname, lastname, plan);
-    return res.status(200).json({ message: "Plan subscribed successfully" });
+    return res.status(200).json({ message: "Plan subscribed successfully",plan: plan });
   });
 };
 
