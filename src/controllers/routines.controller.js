@@ -4,7 +4,13 @@ const nodemailer = require("nodemailer");
 
 ///////////////
 
-const sendNewRoutineEmail = (email, firstname, lastname, name , user_calendar) => {
+const sendNewRoutineEmail = (
+  email,
+  firstname,
+  lastname,
+  name,
+  user_calendar
+) => {
   const EMAIL = process.env.USERMAIL;
   const PASSWORD = process.env.PASSMAIL;
 
@@ -58,14 +64,13 @@ const sendNewRoutineEmail = (email, firstname, lastname, name , user_calendar) =
     });
 };
 
-
 //////////////
 
 exports.createRoutine = async (req, res, next) => {
-  const { day, programId, name, description, userCalendar, email, firstname, lastname } = req.body;
+  const { programId, name, description, userCalendar } = req.body;
   const query =
-    "INSERT INTO gym.routines (day, program_id, name, description, user_calendar) VALUES ($1, $2, $3, $4, $5) RETURNING id";
-  const values = [day, programId, name, description, userCalendar];
+    "INSERT INTO gym.routines (program_id, name, description, user_calendar) VALUES ($1, $2, $3, $4) RETURNING id";
+  const values = [programId, name, description, userCalendar];
   db.query(query, values, (error, results, fields) => {
     if (error) {
       return res
@@ -73,10 +78,16 @@ exports.createRoutine = async (req, res, next) => {
         .json({ message: "Create routine failed", error: error.message });
     }
     const response = results.rows[0].id;
-    sendNewRoutineEmail(email, firstname, lastname, name , userCalendar)
+    sendNewRoutineEmail(
+      req.user.email,
+      req.user.firstname,
+      req.user.lastname,
+      name,
+      userCalendar
+    );
     return res
       .status(201)
-      .json({ message: "Routine created successfully", response: response });
+      .json({ message: "Routine created successfully", routine: response });
   });
 };
 
@@ -98,11 +109,11 @@ exports.getRoutine = async (req, res, next) => {
 };
 
 exports.updateRoutine = async (req, res, next) => {
-  const { day, name, description, userCalendar } = req.body;
+  const { name, description, userCalendar } = req.body;
   const id = req.params.id;
   const query =
-    "UPDATE gym.routines SET day=$1 , name=$2, description=$3, user_calendar=$4 WHERE id=$5";
-  const values = [day, name, description, userCalendar, id];
+    "UPDATE gym.routines SET name=$1, description=$2, user_calendar=$3 WHERE id=$4";
+  const values = [name, description, userCalendar, id];
   db.query(query, values, (error, results) => {
     if (error) {
       return res
@@ -138,5 +149,25 @@ exports.getAllRoutines = async (req, res, next) => {
     return res
       .status(200)
       .json({ message: "Get routines successfully", response: results.rows });
+  });
+};
+
+exports.routineByProgramId = async (req, res, next) => {
+  const { programId } = req.params;
+  const query = "SELECT * FROM gym.routines WHERE program_id = $1";
+  db.query(query, [programId], (error, results, fields) => {
+    if (error) {
+      return res
+        .status(400)
+        .json({ message: "Routines not found", error: error.message });
+    }
+    if (!results || !results.rows) {
+      return res
+        .status(404)
+        .json({ message: "No routines found for this program" });
+    }
+    return res
+      .status(200)
+      .json({ message: "Get routines successfully", routines: results.rows });
   });
 };

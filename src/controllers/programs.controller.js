@@ -79,7 +79,6 @@ exports.createProgram = async (req, res, next) => {
   const queryCreateProgram =
     "INSERT INTO gym.programs (name, description, weekly_routine, duration_program, user_id) VALUES ($1, $2, $3, $4, $5) RETURNING id";
   const values = [name, description, weekly_routine, duration_program, user_id];
-
   db.query(queryCreateProgram, values, (error, results) => {
     if (error) {
       res
