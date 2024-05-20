@@ -12,6 +12,6 @@ router.route("/add-exercise-routine").post(private, addExerciseToRoutine);
 router
   .route("/delete-exercise-routine/:id")
   .delete(private, deleteExerciseFromRoutine);
-router.route("/get-exercise-routine/:id").get(getRoutineExercises);
+router.route("/get-exercise-routine").get(getRoutineExercises);
 
 module.exports = router;

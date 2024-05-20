@@ -393,7 +393,6 @@ exports.getUserById = async (req, res, next) => {
         .status(400)
         .json({ message: "User not found", error: error.message });
     }
-    console.log(values);
     const token = jwt.sign(
       {
         user: results.rows[0],

@@ -9,16 +9,14 @@ exports.addExerciseToRoutine = async (req, res, next) => {
 
   db.query(query, values, (error, results) => {
     if (error) {
-      res.status(400).json({
+      return res.status(400).json({
         message: "Error adding exercise to routine",
         error: error.message,
       });
     }
-    console.log(results);
-    const routineExerciseId = results.rows[0].id;
+
     res.status(201).json({
       message: "Exercise added to routine successfully",
-      exerciseId: routineExerciseId,
     });
   });
 };
@@ -42,11 +40,11 @@ exports.deleteExerciseFromRoutine = async (req, res, next) => {
 
 ///////////////////////////
 exports.getRoutineExercises = async (req, res, next) => {
-  const routineId = req.params.id;
+  // const routineId = req.params.id;
   const query =
-    "SELECT * FROM gym.routine_exercises JOIN gym.exercises ON gym.routine_exercises.exercise_id = gym.exercises.id WHERE routine_id = $1";
+    "SELECT * FROM gym.routine_exercises JOIN gym.exercises ON gym.routine_exercises.exercise_id = gym.exercises.id ";
 
-  db.query(query, [routineId], (error, results) => {
+  db.query(query, (error, results) => {
     if (error) {
       res
         .status(400)
